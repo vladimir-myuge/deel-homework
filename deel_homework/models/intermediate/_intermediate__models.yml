@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: int_payments__with_chargebacks
+    description: >
+      Globepay transactions joined with the chargeback report (left join from
+      transactions). Adds the chargeback-related logic: chargeback is not
+      applicable to declined payments, and a flag shows whether chargeback data exists.
+    columns:
+      - name: transaction_id
+        description: "Globepay transaction identifier."
+        data_tests: [not_null, unique]
+      - name: event_ref
+        description: "Globepay event reference."
+      - name: transaction_at
+        description: "Transaction timestamp (UTC)."
+      - name: transaction_state
+        description: "ACCEPTED or DECLINED."
+      - name: is_accepted
+        description: "TRUE if transaction_state = 'ACCEPTED'."
+        data_tests: [not_null]
+      - name: is_cvv_provided
+        description: "Whether CVV was passed with the request."
+      - name: amount_local
+        description: "Amount in the transaction currency, major units."
+      - name: currency_code
+        description: "Three-letter ISO currency code of the transaction."
+      - name: local_per_usd_rate
+        description: "Local currency units per 1 USD, as quoted by Globepay."
+      - name: amount_usd
+        description: "Amount in USD (amount_local / local_per_usd_rate)."
+      - name: card_country_code
+        description: "ISO 3166-1 alpha-2 country code of the card."
+      - name: has_chargeback_record
+        description: "TRUE if the transaction is present in the chargeback report."
+        data_tests: [not_null]
+      - name: is_chargeback
+        description: >
+          TRUE = charged back, FALSE = accepted and not charged back,
+          NULL = not applicable (declined) or no chargeback data.

@@ -1,0 +1,76 @@
+version: 2
+
+models:
+  - name: stg_globepay__acceptance
+    description: >
+      One row per Globepay transaction attempt (latest file version).
+      Types cast, country code normalized to ISO, amount converted to USD.
+    columns:
+      - name: transaction_id
+        description: "Globepay transaction identifier (external_ref in the report)."
+        data_tests: [not_null, unique]
+      - name: event_ref
+        description: "Globepay event reference (ref in the report)."
+        data_tests: [not_null, unique]
+      - name: transaction_at
+        description: "Transaction timestamp (TIMESTAMP_NTZ, UTC)."
+        data_tests: [not_null]
+      - name: transaction_state
+        description: "Transaction outcome."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['ACCEPTED', 'DECLINED']
+      - name: is_cvv_provided
+        description: "Whether CVV was passed with the request."
+        data_tests: [not_null]
+      - name: amount_local
+        description: "Amount in the transaction currency, major units."
+        data_tests:
+          - not_null
+          - is_positive:
+              config:
+                severity: warn
+      - name: currency_code
+        description: "Three-letter ISO currency code of the transaction."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'CAD', 'MXN']
+              config:
+                severity: warn
+      - name: local_per_usd_rate
+        description: "Exchange rate of the transaction currency, in local currency units per 1 USD, as quoted by Globepay."
+        data_tests: [not_null]
+      - name: amount_usd
+        description: "Amount in USD: amount_local / local_per_usd_rate. Not rounded."
+        data_tests: [not_null]
+      - name: card_country_code
+        description: "Two-letter ISO 3166-1 country code of the card (UK normalized to GB)."
+        data_tests: [not_null]
+      - name: _load_id
+        description: "{{ doc('col__load_id') }}"
+      - name: _loaded_at
+        description: "{{ doc('col__loaded_at') }}"
+
+  - name: stg_globepay__chargebacks
+    description: "One row per Globepay transaction with its chargeback flag (latest file version)."
+    columns:
+      - name: transaction_id
+        description: "Globepay transaction identifier (external_ref in the report)."
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('stg_globepay__acceptance')
+                field: transaction_id
+      - name: is_chargeback
+        description: "Whether the transaction was charged back, as reported by Globepay."
+        data_tests: [not_null]
+      - name: _load_id
+        description: "{{ doc('col__load_id') }}"
+      - name: _loaded_at
+        description: "{{ doc('col__loaded_at') }}"

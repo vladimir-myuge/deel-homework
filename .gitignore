@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.p8
+profiles.yml
+logs/
+target/

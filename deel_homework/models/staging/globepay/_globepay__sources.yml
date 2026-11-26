@@ -1,0 +1,94 @@
+version: 2
+
+sources:
+  - name: globepay
+    description: >
+      Raw Globepay reports loaded from the GLOBEPAY_STAGE stage by the
+      load_raw_globepay macro. All file columns are stored as VARCHAR, exactly
+      as delivered; types are cast in the staging layer.
+      Technical columns (prefixed with _) are TIMESTAMP_NTZ in UTC.
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: acceptance
+        identifier: GLOBEPAY_ACCEPTANCE
+        description: "Globepay acceptance report: one row per card transaction attempt."
+        columns:
+          - name: external_ref
+            description: "Globepay transaction identifier. Join key to the chargeback report."
+            data_tests: [not_null, unique]
+          - name: status
+            description: "Report row status. Observed as constant TRUE; not used downstream."
+          - name: source
+            description: "Data source. Observed as constant GLOBALPAY; not used downstream."
+          - name: ref
+            description: >
+              Event reference (evt_...). Unique per row. Matches the format of
+              external_ref in the Globepay API spec example, which suggests the
+              spec and the report name these fields differently.
+            data_tests: [not_null, unique]
+          - name: date_time
+            description: "Transaction timestamp, ISO 8601 string in UTC (e.g. 2019-01-01T00:00:00.000Z)."
+          - name: state
+            description: "Transaction outcome: ACCEPTED or DECLINED."
+          - name: cvv_provided
+            description: "Whether CVV was passed with the request (TRUE/FALSE)."
+          - name: amount
+            description: >
+              Transaction amount in the transaction currency, in major units
+              (e.g. 1020.46). The API spec says minor units, but the data has
+              decimals, so major units are assumed.
+          - name: country
+            description: >
+              Two-letter country code of the card. Uses UK instead of the ISO
+              code GB.
+          - name: currency
+            description: "Three-letter ISO currency code of the transaction."
+          - name: rates
+            description: >
+              JSON with exchange rates per 1 USD at transaction time,
+              e.g. {"CAD":1.415,"EUR":0.926,...}. Amount in USD = amount / rates[currency].
+          - name: _file_name
+            description: "{{ doc('col__file_name') }}"
+          - name: _file_last_modified
+            description: "{{ doc('col__file_last_modified') }}"
+          - name: _file_content_key
+            description: "{{ doc('col__file_content_key') }}"
+          - name: _load_id
+            description: "{{ doc('col__load_id') }}"
+          - name: _loaded_at
+            description: "{{ doc('col__loaded_at') }}"
+
+      - name: chargebacks
+        identifier: GLOBEPAY_CHARGEBACKS
+        description: >
+          Globepay chargeback report: one row per transaction with a chargeback flag.
+          No chargeback date, amount or reason is provided.
+        columns:
+          - name: external_ref
+            description: "Globepay transaction identifier. Join key to the acceptance report."
+            data_tests:
+              - not_null
+              - unique
+              - relationships:
+                  arguments:
+                    to: source('globepay', 'acceptance')
+                    field: external_ref
+          - name: status
+            description: "Report row status. Observed as constant TRUE; not used downstream."
+          - name: source
+            description: "Data source. Observed as constant GLOBALPAY; not used downstream."
+          - name: chargeback
+            description: >
+              Whether the transaction was charged back (TRUE/FALSE).
+              Also FALSE for declined transactions, where a chargeback is not possible.
+          - name: _file_name
+            description: "{{ doc('col__file_name') }}"
+          - name: _file_last_modified
+            description: "{{ doc('col__file_last_modified') }}"
+          - name: _file_content_key
+            description: "{{ doc('col__file_content_key') }}"
+          - name: _load_id
+            description: "{{ doc('col__load_id') }}"
+          - name: _loaded_at
+            description: "{{ doc('col__loaded_at') }}"

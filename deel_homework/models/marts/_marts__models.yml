@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: fct_payments
+    description: >
+      One row per Globepay card transaction used to fund Deel accounts.
+      Built for analysts: acceptance, declined amounts in USD and chargebacks.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: transaction_id
+        description: "Globepay transaction identifier. Primary key."
+        data_type: varchar
+        constraints:
+          - type: not_null
+          - type: primary_key
+        data_tests: [unique]
+      - name: event_ref
+        description: "Globepay event reference."
+        data_type: varchar
+      - name: transaction_at
+        description: "Transaction timestamp (UTC)."
+        data_type: timestamp_ntz
+      - name: transaction_date
+        description: "Transaction date (UTC). Use for daily, weekly and monthly grouping."
+        data_type: date
+      - name: transaction_state
+        description: "ACCEPTED or DECLINED."
+        data_type: varchar
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['ACCEPTED', 'DECLINED']
+      - name: is_accepted
+        description: "TRUE if the transaction was accepted. Acceptance rate = avg(is_accepted::int)."
+        data_type: boolean
+      - name: is_declined
+        description: "TRUE if the transaction was declined."
+        data_type: boolean
+      - name: is_cvv_provided
+        description: "Whether CVV was passed with the request."
+        data_type: boolean
+      - name: amount_local
+        description: "Amount in the transaction currency, major units."
+        data_type: number(18, 2)
+      - name: currency_code
+        description: "Three-letter ISO currency code of the transaction."
+        data_type: varchar
+      - name: local_per_usd_rate
+        description: "Exchange rate used: local currency units per 1 USD, as quoted by Globepay."
+        data_type: number(38, 10)
+      - name: amount_usd
+        description: "Amount in USD (amount_local / local_per_usd_rate). Not rounded; round only in reports."
+        data_type: number(38, 6)
+        constraints:
+          - type: not_null
+      - name: card_country_code
+        description: "ISO 3166-1 alpha-2 country code of the card."
+        data_type: varchar
+      - name: has_chargeback_record
+        description: "TRUE if the transaction is present in the Globepay chargeback report. FALSE = chargeback data is missing."
+        data_type: boolean
+      - name: is_chargeback
+        description: >
+          TRUE = charged back, FALSE = accepted and not charged back,
+          NULL = not applicable (declined) or no chargeback data (see has_chargeback_record).
+        data_type: boolean
