@@ -1,6 +1,14 @@
+# Python
 .venv/
 __pycache__/
+
+# dbt
+target/
+logs/
+dbt_packages/
+dbt_internal_packages/
+
+# Secrets (kept outside the repo, guard just in case)
+.env
 *.p8
 profiles.yml
-logs/
-target/
