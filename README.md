@@ -15,27 +15,26 @@ The write-up (data exploration, design decisions, lineage, answers with SQL and 
 ```
 deel-homework/
 ├── README.md
-└── deel_homework/                         dbt project
-    ├── dbt_project.yml
-    ├── macros/
-    │   ├── load_raw_from_stage.sql        generic loader: stage CSV -> RAW table + technical columns
-    │   └── load_raw_globepay.sql          list of Globepay tables to load
-    ├── models/
-    │   ├── _shared_docs.md                shared column descriptions ({% docs %} blocks)
-    │   ├── staging/globepay/
-    │   │   ├── _globepay__sources.yml     RAW tables declared as sources
-    │   │   ├── _globepay__models.yml
-    │   │   ├── stg_globepay__acceptance.sql
-    │   │   └── stg_globepay__chargebacks.sql
-    │   ├── intermediate/
-    │   │   ├── _intermediate__models.yml
-    │   │   └── int_payments__with_chargebacks.sql
-    │   └── marts/
-    │       ├── _marts__models.yml         enforced contract
-    │       └── fct_payments.sql
-    └── tests/
-        ├── generic/test_is_positive.sql
-        └── assert_fct_payments__no_chargeback_on_declined.sql
+├── dbt_project.yml
+├── macros/
+│   ├── load_raw_from_stage.sql        generic loader: stage CSV -> RAW table + technical columns
+│   └── load_raw_globepay.sql          list of Globepay tables to load
+├── models/
+│   ├── _shared_docs.md                shared column descriptions ({% docs %} blocks)
+│   ├── staging/globepay/
+│   │   ├── _globepay__sources.yml     RAW tables declared as sources
+│   │   ├── _globepay__models.yml
+│   │   ├── stg_globepay__acceptance.sql
+│   │   └── stg_globepay__chargebacks.sql
+│   ├── intermediate/
+│   │   ├── _intermediate__models.yml
+│   │   └── int_payments__with_chargebacks.sql
+│   └── marts/
+│       ├── _marts__models.yml         enforced contract
+│       └── fct_payments.sql
+└── tests/
+    ├── generic/test_is_positive.sql
+    └── assert_fct_payments__no_chargeback_on_declined.sql
 ```
 
 ## Model layers
@@ -58,7 +57,7 @@ deel-homework/
    ```
    Files are picked by name pattern: `*Acceptance*.csv` and `*Chargeback*.csv`.
 2. Configure `~/.dbt/profiles.yml` with a profile named `deel_homework` (Snowflake account, user, key or password, role, warehouse, database `DEEL_HOMEWORK`).
-3. From the `deel_homework/` folder:
+3. From the repository root:
    ```bash
    dbt debug                              # check the connection
    dbt run-operation load_raw_globepay    # load CSV files from the stage into RAW (idempotent)
